@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+.react-flow__node {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.react-flow__node.react-flow__node-input,
+.react-flow__node.react-flow__node-output {
+  border: none !important;
+  background: transparent !important;
+}
+ 
