@@ -21,6 +21,7 @@ interface StoreState {
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
   updateNodeData: (nodeId: string, data: any) => void;
+  updateNodeHandles: (nodeId: string, newHandles: any[], oldHandles?: any[]) => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -71,6 +72,37 @@ export const useStore = create<StoreState>((set, get) => ({
         node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node
       ),
     }));
+  },
+
+  updateNodeHandles: (nodeId, newHandles = []) => {
+    set((state) => {
+      const newHandleIds = new Set(newHandles.map(h => h.id));
+      
+      const updatedEdges = state.edges.filter(edge => {
+        if (edge.target === nodeId) {
+          return newHandleIds.has(edge.targetHandle || '');
+        }
+        return true;
+      });
+
+      const updatedNodes = state.nodes.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              dynamicHandles: newHandles
+            }
+          };
+        }
+        return node;
+      });
+
+      return {
+        edges: updatedEdges,
+        nodes: updatedNodes
+      };
+    });
   },
 }));
 

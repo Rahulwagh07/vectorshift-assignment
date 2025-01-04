@@ -1,6 +1,21 @@
-export const nodes = [
-  { type: 'input', label: 'Input', iconName: 'FiArrowRight' },
-  { type: 'output', label: 'Output', iconName: 'FiArrowLeft' },
-  { type: 'llm', label: 'LLM', iconName: 'FiCpu' },
+import { NodeType } from '../types/node';
+import { IconName } from './icons';
+
+interface NodeDataConfig {
+  type: NodeType;
+  label: string;
+  icon: IconName;
+}
+
+const createNode = (type: NodeType, label: string, icon: IconName): NodeDataConfig => {
+  return { type, label, icon };
+};
+
+export const nodes: NodeDataConfig[] = [
+  createNode('input', 'Input', 'input'),
+  createNode('output', 'Output', 'output'),
+  createNode('text', 'Text', 'text'),
+  createNode('llm', 'LLM', 'llm'),
+  createNode('integration', 'Integration', 'integration'),
 ];
 

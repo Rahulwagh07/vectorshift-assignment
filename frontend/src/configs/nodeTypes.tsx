@@ -1,10 +1,29 @@
-import React from 'react';
-import { NodeProps, NodeTypes } from 'reactflow';
+import { NodeProps, NodeTypes as ReactFlowNodeTypes } from 'reactflow';
 import { BaseNode } from '../components/nodes/BaseNode';
 import { nodeConfigs } from './nodeConfigs';
+import { NodeConfig, NodeFieldType, NodeHandleConfig, NodeType } from '../types/node';
 
-export const nodeTypes: NodeTypes = Object.keys(nodeConfigs).reduce((acc, key) => {
-  acc[key] = (props: NodeProps) => <BaseNode {...props} config={nodeConfigs[key]} handles={nodeConfigs[key].handles} />;
-  return acc;
-}, {} as NodeTypes);
+const createNodeTypes = () => {
+  return (Object.keys(nodeConfigs) as NodeType[]).reduce((acc, key) => {
+    const config: NodeConfig = {
+      type: key,
+      label: nodeConfigs[key].label,
+      fields: nodeConfigs[key].fields as NodeFieldType[],
+      handles: nodeConfigs[key].handles as NodeHandleConfig[]
+    };
+    
+    acc[key] = (props: NodeProps) => (
+      <BaseNode 
+        {...props} 
+        config={config}
+        handles={[
+          ...(props.data?.dynamicHandles || []),
+          ...nodeConfigs[key].handles
+        ]} 
+      />
+    );
+    return acc;
+  }, {} as ReactFlowNodeTypes);
+};
 
+export const nodeTypes = createNodeTypes();
