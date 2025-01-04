@@ -9,7 +9,9 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useStore } from "../store";
-import { nodeTypes } from "../configs/nodeTypes";
+import { nodeTypes} from "../configs/nodeTypes";
+import { NodeTypes } from '../configs/nodeConfigs';
+import CustomConnectionLine from './ui/CustomConnectionLine';
 
 const gridSize = 20;
 const proOptions = { hideAttribution: true };
@@ -38,19 +40,21 @@ const Flow = () => {
 
         if (!bounds || !appData) return;
 
-        const { nodeType } = JSON.parse(appData);
-        if (!nodeType) return;
+        const { nodeType, config } = JSON.parse(appData);
+        if (!nodeType || !(nodeType in nodeTypes)) return;
 
-        const position = reactFlow.project({
+        const position = reactFlow.screenToFlowPosition({
           x: event.clientX - bounds.left,
           y: event.clientY - bounds.top,
         });
 
         const newNode: Node = {
           id: getNodeID(nodeType),
-          type: nodeType,
+          type: nodeType as NodeTypes,
           position,
-          data: {},
+          data: {
+            config,
+          },
         };
 
         addNode(newNode);
@@ -69,7 +73,7 @@ const Flow = () => {
   return (
     <div
       ref={reactFlowWrapper}
-      className="w-full h-[70vh] bg-white rounded-lg shadow-sm border border-gray-200 relative"
+      className="w-full h-[calc(100vh-8rem)] -mt-4 bg-white rounded-lg shadow-sm border border-gray-200 relative z-0"
     >
       <ReactFlow
         nodes={nodes}
@@ -80,6 +84,7 @@ const Flow = () => {
         onDrop={onDrop}
         onDragOver={onDragOver}
         nodeTypes={nodeTypes}
+        connectionLineComponent={CustomConnectionLine}
         proOptions={proOptions}
         snapToGrid
         snapGrid={[gridSize, gridSize]}
@@ -88,7 +93,7 @@ const Flow = () => {
         maxZoom={2}
       >
         <Background color="#94a3b8" gap={gridSize} size={1} />
-        <div className="absolute bottom-4 right-72 flex items-center gap-2 bg-white border border-gray-200 shadow-sm p-1 rounded">
+        <div className="absolute bottom-4 right-[17rem] flex items-center gap-2 bg-white border border-gray-200 shadow-sm p-1 rounded">
           <Controls className="bg-white" />
         </div>
         <MiniMap className="bg-white border border-gray-200" />

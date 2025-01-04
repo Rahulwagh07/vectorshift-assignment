@@ -1,35 +1,55 @@
 import React from 'react';
-import * as Icons from 'react-icons/fi';
+import { NodeTypes } from '../../configs/nodeConfigs';
+import { nodeConfigs } from '../../configs/nodeConfigs';
+import { Icons, IconName } from '../../configs/icons';
+import { IconRenderer } from '../ui/RenderIcon';
+import { useStore } from '../../store';
 
 interface NodeProps {
-  type: string;
+  type: NodeTypes;
   label: string;
-  iconName: keyof typeof Icons;
+  icon: IconName;
 }
 
-export const DraggableNode: React.FC<NodeProps> = ({ type, label, iconName }) => {
-  const Icon = Icons[iconName];
+export const DraggableNode: React.FC<NodeProps> = ({ type, label, icon }) => {
+  const IconComponent = Icons[icon];
+  const { getNodeID, addNode } = useStore();
 
-  const onDragStart = (event: React.DragEvent<HTMLDivElement>, nodeType: string) => {
-    const appData = { nodeType };
-    event.dataTransfer.setData('application/reactflow', JSON.stringify(appData));
-    event.dataTransfer.effectAllowed = 'move';
-    event.currentTarget.style.cursor = 'grabbing';
+  const onClick = () => {
+    const newNode = {
+      id: getNodeID(type),
+      type: type,
+      position: { x: 100, y: 100 },
+      data: {
+        config: nodeConfigs[type as keyof typeof nodeConfigs],
+      },
+    };
+
+    addNode(newNode);
   };
 
-  const onDragEnd = (event: React.DragEvent<HTMLDivElement>) => {
-    event.currentTarget.style.cursor = 'grab';
+  const onDragStart = (event: React.DragEvent<HTMLDivElement>) => {
+    event.dataTransfer.setData('application/reactflow', JSON.stringify({
+      nodeType: type,
+      config: nodeConfigs[type as keyof typeof nodeConfigs],
+    }));
+    event.dataTransfer.effectAllowed = 'move';
   };
 
   return (
     <div
-      className="flex flex-col items-center justify-center w-24 h-20 rounded-lg bg-white shadow-md cursor-grab transition-all hover:shadow-lg"
-      onDragStart={(event) => onDragStart(event, type)}
-      onDragEnd={onDragEnd}
+      className="flex flex-col items-center justify-center w-20 h-20 p-3 rounded-lg bg-white border border-gray-200 cursor-pointer transition-all hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm"
+      onDragStart={onDragStart}
+      onClick={onClick}
       draggable
     >
-      <Icon size={24} className="text-gray-600 mb-2" />
-      <span className="text-sm font-medium text-gray-700">{label}</span>
+      {IconComponent && (
+        <IconRenderer 
+          icon={IconComponent} 
+          className="w-6 h-6 text-gray-700 mb-2" 
+        />
+      )}
+      <span className="text-xs text-gray-600 text-center font-medium">{label}</span>
     </div>
   );
 };
