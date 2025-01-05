@@ -1,4 +1,4 @@
-import { ConnectionLineComponentProps } from 'reactflow';
+import { ConnectionLineComponentProps } from "reactflow";
 
 const CustomConnectionLine = ({
   fromX,

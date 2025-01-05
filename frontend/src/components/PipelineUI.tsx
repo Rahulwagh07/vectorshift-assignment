@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -9,13 +9,15 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useStore } from "../store";
-import { nodeTypes} from "../configs/nodeTypes";
-import { NodeTypes } from '../configs/nodeConfigs';
-import CustomConnectionLine from './ui/CustomConnectionLine';
+import { edgeTypes, nodeTypes } from "../configs/nodeTypes";
+import { NodeTypes } from "../configs/nodeConfigs";
+import CustomConnectionLine from "./ui/CustomConnectionLine";
+import { Button } from "./ui/Button";
+import { submitPipeline } from "../services/api";
 
-const gridSize = 20;
+const gridSize = 15;
 const proOptions = { hideAttribution: true };
-
+ 
 const Flow = () => {
   const {
     nodes,
@@ -29,6 +31,7 @@ const Flow = () => {
 
   const reactFlow = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false);
 
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
@@ -70,6 +73,12 @@ const Flow = () => {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
+  const handleSubmit = useCallback(async () => {
+    setLoading(true);
+    await submitPipeline(nodes, edges);
+    setLoading(false);
+  }, [nodes, edges]);
+
   return (
     <div
       ref={reactFlowWrapper}
@@ -86,17 +95,27 @@ const Flow = () => {
         nodeTypes={nodeTypes}
         connectionLineComponent={CustomConnectionLine}
         proOptions={proOptions}
+        defaultEdgeOptions={{ type: "custom" }}
+        edgeTypes={edgeTypes}
         snapToGrid
         snapGrid={[gridSize, gridSize]}
         defaultViewport={{ x: 0, y: 0, zoom: 0.9 }}
         minZoom={0.5}
         maxZoom={2}
       >
-        <Background color="#94a3b8" gap={gridSize} size={1} />
-        <div className="absolute bottom-4 right-[17rem] flex items-center gap-2 bg-white border border-gray-200 shadow-sm p-1 rounded">
+        <Background color="#94a3b8" gap={gridSize} size={1.2} />
+        <div className="absolute bottom-4 right-[17rem]">
           <Controls className="bg-white" />
         </div>
         <MiniMap className="bg-white border border-gray-200" />
+        <div className="absolute bottom-4 right-[17.5rem] z-10">
+          <Button
+            text="Submit"
+            variant="primary"
+            onClick={handleSubmit}
+            loading={loading}
+          />
+        </div>
       </ReactFlow>
     </div>
   );

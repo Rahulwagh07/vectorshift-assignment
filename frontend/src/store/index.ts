@@ -8,7 +8,6 @@ import {
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
-  MarkerType
 } from 'reactflow';
 
 interface StoreState {
@@ -22,13 +21,23 @@ interface StoreState {
   onConnect: (connection: Connection) => void;
   updateNodeData: (nodeId: string, data: any) => void;
   updateNodeHandles: (nodeId: string, newHandles: any[], oldHandles?: any[]) => void;
+  connections: EdgeConnection[];
+  addConnection: (connection: EdgeConnection) => void;
+}
+
+interface EdgeConnection {
+  source: string;
+  target: string;
+  sourceHandle: string;
+  targetHandle: string;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
   nodes: [],
   edges: [],
   nodeIDs: {},
-  
+  connections: [],
+
   getNodeID: (type) => {
     const newIDs = { ...get().nodeIDs };
     newIDs[type] = (newIDs[type] || 0) + 1;
@@ -54,16 +63,20 @@ export const useStore = create<StoreState>((set, get) => ({
     }));
   },
 
-  onConnect: (connection) => {
-    set((state) => ({
-      edges: addEdge({
-        ...connection,
-        type: 'smoothstep',
-        animated: true,
-        style: { stroke: '#94a3b8', strokeWidth: 2 },
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
-      }, state.edges),
-    }));
+  onConnect: (params) => {
+    set((state) => {
+      const newConnection = {
+        source: params.source || '',
+        target: params.target || '',
+        sourceHandle: params.sourceHandle || '',
+        targetHandle: params.targetHandle || ''
+      };
+
+      return {
+        connections: [...state.connections, newConnection],
+        edges: addEdge(params, state.edges)
+      };
+    });
   },
 
   updateNodeData: (nodeId, data) => {
@@ -77,7 +90,7 @@ export const useStore = create<StoreState>((set, get) => ({
   updateNodeHandles: (nodeId, newHandles = []) => {
     set((state) => {
       const newHandleIds = new Set(newHandles.map(h => h.id));
-      
+
       const updatedEdges = state.edges.filter(edge => {
         if (edge.target === nodeId) {
           return newHandleIds.has(edge.targetHandle || '');
@@ -103,6 +116,13 @@ export const useStore = create<StoreState>((set, get) => ({
         nodes: updatedNodes
       };
     });
+  },
+
+  addConnection: (connection) => {
+    set((state) => ({
+      connections: [...state.connections, connection],
+      edges: addEdge(connection, state.edges)
+    }));
   },
 }));
 

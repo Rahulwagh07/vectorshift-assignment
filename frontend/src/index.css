@@ -75,3 +75,25 @@
   z-index: 1001 !important;
 }
  
+
+/* scrollbar */
+
+ 
+
+.custom-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-textarea::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+}
+
+.custom-textarea:hover::-webkit-scrollbar-thumb {
+  background-color: #9ca3af;
+}

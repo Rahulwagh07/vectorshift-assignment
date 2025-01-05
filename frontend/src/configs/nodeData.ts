@@ -12,10 +12,10 @@ const createNode = (type: NodeType, label: string, icon: IconName): NodeDataConf
 };
 
 export const nodes: NodeDataConfig[] = [
-  createNode('input', 'Input', 'input'),
-  createNode('output', 'Output', 'output'),
-  createNode('text', 'Text', 'text'),
-  createNode('llm', 'LLM', 'llm'),
-  createNode('integration', 'Integration', 'integration'),
+  createNode(NodeType.Input, 'Input', 'input'),
+  createNode(NodeType.Output, 'Output', 'output'),
+  createNode(NodeType.Text, 'Text', 'text'),
+  createNode(NodeType.Llm, 'LLM', 'llm'),
+  createNode(NodeType.Integration, 'Integration', 'integration'),
 ];
 

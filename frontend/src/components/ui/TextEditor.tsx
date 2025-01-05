@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { generateVariableHandles } from "../../lib/utils";
 
 interface TextEditorProps {
   value: string;
@@ -6,91 +7,85 @@ interface TextEditorProps {
   placeholder?: string;
 }
 
-export const TextEditor: React.FC<TextEditorProps> = ({ value, onChange, placeholder }) => {
-  const [displayParts, setDisplayParts] = useState<{ type: 'text' | 'variable', content: string }[]>([]);
-  const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [inputHeight, setInputHeight] = useState('38px');
-  const displayRef = useRef<HTMLDivElement>(null);
+export const TextEditor: React.FC<TextEditorProps> = ({
+  value: initialValue,
+  onChange,
+  placeholder,
+}) => {
+  const [value, setValue] = useState<string>(initialValue);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [width, setWidth] = useState<number>(150);
+  const [processedVariables, setProcessedVariables] = useState<Set<string>>(
+    new Set()
+  );
 
-  const parseContent = (text: string) => {
-    const parts: { type: 'text' | 'variable', content: string }[] = [];
-    let lastIndex = 0;
-    const regex = /{{\s*(\w+)\s*}}/g;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  const autoResize = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      const newHeight = Math.min(textareaRef.current.scrollHeight, 300);
+      textareaRef.current.style.height = `${newHeight}px`;
+      textareaRef.current.style.overflowY =
+        newHeight === 300 ? "auto" : "hidden";
+
+      const lines = textareaRef.current.value.split("\n").length;
+      const textLength = textareaRef.current.value.length;
+
+      if (lines > 1 || textLength > 50) {
+        const newWidth = Math.min(150 + lines * 20 + textLength / 20, 400);
+        setWidth(newWidth);
       }
-      parts.push({ type: 'variable', content: match[1] });
-      lastIndex = match.index + match[0].length;
     }
+  }, [width]);
 
-    if (lastIndex < text.length) {
-      parts.push({ type: 'text', content: text.slice(lastIndex) });
-    }
+  const handleVariableSpaces = (text: string): string => {
+    const variables = generateVariableHandles(text);
 
-    return parts;
+    variables.forEach((variable) => {
+      if (!processedVariables.has(variable)) {
+        const variableRegex = new RegExp(`{{\\s*${variable}\\s*}}`, "g");
+        text = text.replace(variableRegex, `  {{${variable}}}  `);
+        setProcessedVariables((prev) => new Set(prev).add(variable));
+      }
+    });
+
+    return text;
   };
 
-  useEffect(() => {
-    setDisplayParts(parseContent(value));
-  }, [value]);
+  const handleInput = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      let text = event.target.value;
 
-  useEffect(() => {
-    if (displayRef.current) {
-      const height = displayRef.current.offsetHeight;
-      setInputHeight(`${Math.max(38, height)}px`);
-    }
-  }, [displayParts]);
+      text = handleVariableSpaces(text);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-  };
+      setValue(text);
+      onChange(text);
 
-  const handleFocus = () => setIsFocused(true);
-  const handleBlur = () => setIsFocused(false);
- 
+      autoResize();
+    },
+    [onChange, autoResize, processedVariables]
+  );
 
   return (
-    <div className="relative min-w-[100px] max-w-[200px]">
-      <div 
-        className={`
-          relative border border-slate-200 rounded-md overflow-hidden
-          ${isFocused ? 'ring-2 ring-blue-200 border-blue-500' : ''}
-        `}
-        style={{ minHeight: inputHeight }}
-      >
-        <div 
-          ref={displayRef}
-          className="p-2 w-full whitespace-pre-wrap break-words"
-        >
-          {displayParts.map((part, index) => (
-            part.type === 'variable' ? (
-              <span
-                key={index}
-                className="inline-block px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-600 font-mono text-sm mr-1 mb-1"
-              >
-              {part.content} 
-              </span>
-            ) : (
-              <span key={index} className="inline-block mr-1 mb-1">{part.content}</span>
-            )
-          ))}
-          <span className="invisible">&nbsp;</span>
-        </div>
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          placeholder={placeholder}
-          className="absolute top-0 left-0 w-full h-full outline-none bg-transparent p-2 text-transparent caret-black"
-        />
-      </div>
+    <div className="relative min-w-[150px] max-w-[400px]">
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={handleInput}
+        placeholder={placeholder}
+        className="custom-textarea w-full text-sm border border-gray-200 rounded px-2 py-1.5 
+       min-h-[30px] resize-none focus:outline-none focus:ring-1 focus:ring-blue-500;
+      max-height: 200px;"
+        rows={1}
+        style={{
+          width: `${width}px`,
+          minWidth: "200px",
+          maxHeight: "250px",
+        }}
+      />
     </div>
   );
-}; 
+};

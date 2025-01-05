@@ -1,140 +1,138 @@
 import { Position } from 'reactflow';
+import { NodeField } from '../types/node';
 
 export const nodeConfigs = {
   input: {
-    id:1,
+    id: 1,
     label: 'Input',
     fields: [
-      { 
-        name: 'Field Name', 
-        type: 'text' as const,
-        placeholder: 'input_1', 
+      {
+        name: 'Field Name',
+        type: NodeField.Text,
+        placeholder: 'input_1',
         initialValue: 'input_1',
-        handleId: 'value'
+        handleId: 'Value'
       },
       {
         name: 'Type',
-        type: 'select' as const,
-        options: ['text', 'file'],
-        initialValue: 'text'
+        type: NodeField.Select,
+        options: ['Text', 'File'],
+        initialValue: 'Text'
       }
     ],
     handles: [
       {
-        type: 'source' as const,
+        type: 'source',
         position: Position.Right,
         id: 'value',
-        label: 'Value'
+        label: 'Input'
       }
     ],
   },
 
   output: {
-    id:2,
+    id: 2,
     label: 'Output',
     fields: [
-      { 
-        name: 'Field Name', 
-        type: 'text',
+      {
+        name: 'Field Name',
+        type: NodeField.Text,
         handleId: 'input'
       },
       {
         name: 'Type',
-        type: 'select' as const,
+        type: NodeField.Select,
         options: ['text', 'file'],
         initialValue: 'text'
       }
     ],
     handles: [
-      { 
-        type: 'target', 
-        position: Position.Left, 
+      {
+        type: 'target',
+        position: Position.Left,
         id: 'input',
-        label: 'Input' 
+        label: ''
       }
     ],
   },
 
   llm: {
-    id:3,
+    id: 3,
     label: 'LLM',
     fields: [
-      { 
-        name: 'System Message', 
-        type: 'textArea',
-        placeholder: 'Enter system message',
+      {
+        name: 'System Message',
+        type: NodeField.TextArea,
         handleId: 'system'
       },
-      { 
-        name: 'Prompt Template', 
-        type: 'textArea',
-        placeholder: 'Enter prompt template',
+      {
+        name: 'Prompt Template',
+        type: NodeField.TextArea,
         handleId: 'prompt'
       },
       {
         name: 'Model',
-        type: 'select',
+        type: NodeField.Select,
         options: ['GPT-3.5', 'GPT-4', 'Claude'],
         initialValue: 'GPT-3.5'
       }
     ],
     handles: [
-      { 
-        type: 'target', 
-        position: Position.Left, 
+      {
+        type: 'target',
+        position: Position.Left,
         id: 'system',
-        label: 'System' 
+        label: 'System'
       },
-      { 
-        type: 'target', 
-        position: Position.Left, 
+      {
+        type: 'target',
+        position: Position.Left,
         id: 'prompt',
-        label: 'Prompt' 
+        label: 'Prompt'
       },
-      { 
-        type: 'source', 
-        position: Position.Right, 
+      {
+        type: 'source',
+        position: Position.Right,
         id: 'response',
-        label: 'Response' 
+        label: 'Output'
       }
     ],
   },
 
   text: {
-    id:4,
+    id: 4,
     label: 'Text',
     fields: [
-      { 
-        name: 'Text Input', 
-        type: 'textNode', 
-        placeholder: 'Enter text',
+      {
+        name: 'Text Input',
+        type: NodeField.TextEditor,
+        placeholder: '',
         initialValue: '',
         handleId: '0'
       }
     ],
     handles: [
-      { 
-        type: 'source', 
-        position: Position.Right, 
-        id: '0',
-        label: 'Output' 
+      {
+        type: 'source',
+        position: Position.Right,
+        id: 'Text Input',
+        label: 'Output'
       }
     ],
   },
 
   integration: {
-    id:5,
+    id: 5,
     label: 'Integration',
     fields: [
       {
         name: 'Action',
-        type: 'select',
-        options: ['Send Email', 'HTTP Request', 'Database Query'],
+        type: NodeField.Select,
+        options: ['Send Email', 'Send Email', 'Send Reply'],
         initialValue: 'Send Email'
       },
       {
-        name: 'Button',
-        type: 'button',
+        type: NodeField.Button,
         icon: 'FiSend',
         text: 'Execute',
         variant: 'primary'
