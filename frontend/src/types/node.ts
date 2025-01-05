@@ -23,10 +23,6 @@ export interface NodeFieldMultiSelect extends NodeFieldBase {
   initialValue?: string[];
 }
 
-export interface NodeFieldCodeEditor extends NodeFieldBase {
-  type: 'codeEditor';
-  language?: string;
-}
 
 export interface NodeFieldButton extends NodeFieldBase {
   type: 'button';
@@ -40,13 +36,18 @@ export interface NodeFieldRadio extends NodeFieldBase {
   options: string[];
 }
 
-export type NodeFieldType = 
-  | NodeFieldSelect 
-  | NodeFieldMultiSelect 
-  | NodeFieldCodeEditor 
-  | NodeFieldButton 
-  | NodeFieldRadio
-  | NodeFieldBase;
+export enum NodeField {
+  Select = "select",
+  MultiSelect = "multiSelect",
+  TextEditor = "textEditor",
+  Button = "button",
+  Radio = "radio",
+  Base = "base",
+  Text = "text",
+  TextArea = "textArea"
+}
+
+export type NodeFieldType = NodeFieldBase | NodeFieldSelect | NodeFieldMultiSelect | NodeFieldButton | NodeFieldRadio;
 
 export interface NodeHandleConfig {
   id: string;
@@ -56,7 +57,14 @@ export interface NodeHandleConfig {
   style?: React.CSSProperties;
 }
 
-export type NodeType = "text" | "input" | "output" | "llm" | "integration";
+
+export enum NodeType {
+  Text = "text",
+  Input = "input",
+  Output = "output",
+  Llm = "llm",
+  Integration = "integration"
+}
 
 export interface NodeConfig {
   label: string;

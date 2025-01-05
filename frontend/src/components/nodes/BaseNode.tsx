@@ -1,211 +1,158 @@
-import React, { memo, useCallback, useState, useEffect, useMemo } from 'react';
-import { Handle, Position, useUpdateNodeInternals } from 'reactflow';
-import { useStore } from '../../store';
-import { X } from 'lucide-react';
-import { Icons } from '../../configs/icons';
-import { nodes } from '../../configs/nodeData';
-import { NodeHandleConfig, NodeProps } from '../../types/node';
-import { generateVariableHandles } from '../../lib/utils';
-import { RenderField } from './RenderField';
-import { IconRenderer } from '../ui/RenderIcon';
+import { memo, useEffect, useMemo } from "react";
+import { Handle, useUpdateNodeInternals } from "reactflow";
+import { useStore } from "../../store";
+import { X } from "lucide-react";
+import { Icons } from "../../configs/icons";
+import { nodes } from "../../configs/nodeData";
+import { NodeHandleConfig, NodeProps } from "../../types/node";
+import { RenderField } from "./RenderField";
+import { IconRenderer } from "../ui/RenderIcon";
+import { NodeHandle } from "./NodeHandle";
+import { useConnectedHandles } from "../../hooks/useConnectedHandles";
+import { useNodeData } from "../../hooks/useNodeData";
 
-export const BaseNode = memo(({ id, data, type, handles, config, selected }: NodeProps) => {
-  const updateNodeData = useStore((state) => state.updateNodeData);
-  const updateNodeHandles = useStore((state) => state.updateNodeHandles);
-  const onNodesChange = useStore((state) => state.onNodesChange);
-  const updateNodeInternals = useUpdateNodeInternals();
+export const BaseNode = memo(
+  ({ id, data, type, handles, config, selected }: NodeProps) => {
+    const updateNodeInternals = useUpdateNodeInternals();
+    const onNodesChange = useStore((state) => state.onNodesChange);
+    const { localData, handleChange, previousHandles } = useNodeData(
+      id,
+      data,
+      handles
+    );
+    const { isHandleConnected } = useConnectedHandles(id);
 
-  const [localData, setLocalData] = useState(data);
-  const [previousHandles, setPreviousHandles] = useState<any[]>(data.dynamicHandles || []);
+    const handleRemoveNode = () => {
+      onNodesChange([{ type: "remove", id }]);
+    };
 
-  useEffect(() => {
-    if (data['Text Input']) {
-      handleChange('Text Input', data['Text Input']);
-    }
-  }, []);
+    const nodeConfig = nodes.find((node) => node.label === config?.label);
+    const IconComponent = nodeConfig ? Icons[nodeConfig.icon] : null;
 
-  const handleChange = useCallback(
-    (field: string, value: any) => {
-      const updatedData = { ...localData, [field]: value };
-      setLocalData(updatedData);
-      updateNodeData(id, updatedData);
-  
-      if (field === 'Text Input') {
-        const staticHandlesCount = handles.length;
-        const variables = generateVariableHandles(value);
-        const newVariableHandles = variables.map((_, index) => ({
-          type: 'target' as const,
-          position: Position.Left,
-          id: `${id}-dhandle-${index}`,
-          label: variables[index].slice(0, 12),
-          style: { 
-            top: `${index === 0 ? '' : `${(index + staticHandlesCount) * 14}px`}`,
-          },
-        }));
-        
-        updateNodeHandles(id, newVariableHandles, previousHandles);
-        setPreviousHandles(newVariableHandles);
-        updateNodeInternals(id);
-      }
-    },
-    [id, localData, updateNodeData, updateNodeHandles, previousHandles, updateNodeInternals, handles]
-  );
+    const handlesByFieldId = useMemo(
+      () =>
+        handles.reduce<Record<string, any>>((acc, handle) => {
+          acc[handle.id] = handle;
+          return acc;
+        }, {}),
+      [handles]
+    );
 
-  const handleRemoveNode = useCallback(() => {
-    onNodesChange([{ type: 'remove', id }]);
-  }, [id, onNodesChange]);
+    const dynamicHandlesElements = useMemo(
+      () =>
+        localData?.dynamicHandles?.map(
+          (handle: NodeHandleConfig, index: number) => (
+            <div key={`dynamic-${handle.id}-${index}`} className="mb-2">
+              <Handle
+                type={handle.type}
+                position={handle.position}
+                id={handle.id}
+                style={{ top: `${index * 30}px`, ...handle.style }}
+                className={`handle ${
+                  isHandleConnected(handle.id) ? "connected" : ""
+                }`}
+              />
+            </div>
+          )
+        ),
+      [localData?.dynamicHandles, isHandleConnected]
+    );
 
-  const nodeConfig = nodes.find((node) => node.label === config?.label);
-  const IconComponent = nodeConfig ? Icons[nodeConfig.icon] : null;
-  
-  const handlesByFieldId = useMemo(() => 
-    handles.reduce<Record<string, any>>((acc, handle) => {
-      acc[handle.id] = handle;
-      return acc;
-    }, {}),
-    [handles]
-  );
+    const fieldHandleIds = useMemo(
+      () =>
+        new Set(
+          config?.fields?.map((field) => field.handleId).filter(Boolean) || []
+        ),
+      [config?.fields]
+    );
 
-  const dynamicHandlesElements = useMemo(() => 
-    localData?.dynamicHandles?.map((handle: NodeHandleConfig) => (
-      <React.Fragment key={handle.id}>
-        <Handle
-          type={handle.type}
-          position={handle.position}
-          id={handle.id}
-          style={handle.style}
-        />
-        <span 
-          className="absolute text-[10px] text-gray-400"
-          style={{
-            right: -60,
-            top: handle.style?.top || '50%',
-            transform: 'translateY(-50%)'
-          }}
-        >
-          {handle.label}
-        </span>
-      </React.Fragment>
-    )),
-    [localData?.dynamicHandles]
-  );
+    const defaultHandles = useMemo(
+      () => handles.filter((handle) => !fieldHandleIds.has(handle.id)),
+      [handles, fieldHandleIds]
+    );
 
-  const fieldHandleIds = useMemo(() => 
-    new Set(config?.fields?.map(field => field.handleId).filter(Boolean) || []),
-    [config?.fields]
-  );
+    const defaultHandlesElements = useMemo(
+      () =>
+        defaultHandles.map((handle, index) => (
+          <NodeHandle
+            key={`remaining-${handle.id}-${index}`}
+            handle={handle}
+            isConnected={isHandleConnected(handle.id)}
+            handleType="default"
+          />
+        )),
+      [defaultHandles, isHandleConnected]
+    );
 
-  const remainingHandles = useMemo(() => 
-    handles.filter(handle => !fieldHandleIds.has(handle.id)),
-    [handles, fieldHandleIds]
-  );
+    useEffect(() => {
+      updateNodeInternals(id);
+    }, [id, updateNodeInternals, previousHandles]);
 
-  const remainingHandlesElements = useMemo(() => 
-    remainingHandles.map(handle => (
-      <React.Fragment key={handle.id}>
-        <Handle
-          type={handle.type}
-          position={handle.position}
-          id={handle.id}
-          style={{
-            ...(handle.style || {}),
-            position: 'absolute',
-            top: handle.style?.top || '50%',
-            transform: 'translateX(0)',
-            ...(handle.position === Position.Left 
-              ? { left: -7 } 
-              : { right: -7 })
-          }}
-        />
-        {handle.label && (
-          <span 
-            className="absolute text-[10px] text-gray-400"
-            style={{
-              ...(handle.position === Position.Left 
-                ? { left: -60 } 
-                : { right: -60 }),
-              top: handle.style?.top || '50%',
-              transform: 'translateY(-50%)'
-            }}
-          >
-            {handle.label}
-          </span>
-        )}
-      </React.Fragment>
-    )),
-    [remainingHandles]
-  );
-
-  return (
-    <div className={`bg-white border rounded-lg shadow-sm relative min-h-[100px] transition-all !important
-      ${selected 
-        ? '!border-blue-500 !shadow-md !ring-2 !ring-blue-200' 
-        : '!border-gray-200'
+    return (
+      <div
+        className={`bg-white border min-w-[180px] rounded-lg shadow-sm relative min-h-[100px] transition-all !important
+      ${
+        selected
+          ? "!border-indigo-800 !shadow-lg !ring-2 !ring-indigo-300"
+          : "!border-indigo-400 !shadow-md !ring-2 !ring-indigo-200"
       }`}
-    >
-      <div className={`flex items-center justify-between px-3 py-2 border-b transition-colors
-        ${selected ? '!border-blue-200' : '!border-gray-100'}`}
       >
-        <div className='flex items-center justify-center'>
-          {IconComponent && (
-            <IconRenderer 
-              icon={IconComponent} 
-              className="w-4 h-4 text-gray-600 mr-2" 
-            />
-          )}
-          <span className="text-xs font-medium text-gray-700">{config?.label || type}</span>
-        </div>
-        <button
-          onClick={handleRemoveNode}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Remove node"
+        <div
+          className={`flex items-center justify-between px-3 py-2 border-b transition-colors
+        ${selected ? "!border-blue-200" : "!border-gray-100"}`}
         >
-          <X size={12} />
-        </button>
-      </div>
-
-      {dynamicHandlesElements}
-      {remainingHandlesElements}
-
-      <div className="p-3 space-y-3">
-        {config?.fields?.map((field) => (
-          <div key={field.name} className="flex flex-col gap-1 relative">
-            <label className="text-xs text-start text-gray-500">{field.name}</label>
-            {field.handleId && handlesByFieldId[field.handleId] && (
-              <>
-                <Handle
-                  type={handlesByFieldId[field.handleId].type}
-                  position={handlesByFieldId[field.handleId].position}
-                  id={handlesByFieldId[field.handleId].id}
-                  style={{
-                    ...(handlesByFieldId[field.handleId].style || {}),
-                    top: '70%',
-                    transform: 'translateY(-50%)',
-                    ...(handlesByFieldId[field.handleId].position === Position.Left 
-                      ? { left: -20 } 
-                      : { right: -20 })
-                  }}
-                />
-                <span 
-                  className="absolute text-[10px] text-gray-400"
-                  style={{
-                    ...(handlesByFieldId[field.handleId].position === Position.Left 
-                      ? { left: -60 } 
-                      : { right: -60 }),
-                    top: '50%',
-                    transform: 'translateY(-50%)'
-                  }}
-                >
-                  {handlesByFieldId[field.handleId].label}
-                </span>
-              </>
+          <div className="flex items-center justify-center">
+            {IconComponent && (
+              <IconRenderer
+                icon={IconComponent}
+                className="w-4 h-4 text-gray-600 mr-2"
+              />
             )}
-            {RenderField(field, localData[field.name] || field.initialValue || '', (value) => handleChange(field.name, value))}
+            <span className="text-xs font-medium text-gray-700">
+              {config?.label || type}
+            </span>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-});
+          <button
+            onClick={handleRemoveNode}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Remove node"
+          >
+            <X size={12} />
+          </button>
+        </div>
 
-BaseNode.displayName = 'BaseNode';
+        {dynamicHandlesElements}
+        {defaultHandlesElements}
+
+        <div className="p-3 space-y-3">
+          {config?.fields?.map((field, index) => (
+            <div
+              key={`${field.name}-${index}`}
+              className="flex flex-col gap-1 relative"
+            >
+              <label className="text-xs text-start text-gray-500">
+                {field.name}
+              </label>
+              {field.handleId && handlesByFieldId[field.handleId] && (
+                <NodeHandle
+                  handle={handlesByFieldId[field.handleId]}
+                  isConnected={isHandleConnected(
+                    handlesByFieldId[field.handleId].id
+                  )}
+                  handleType="field"
+                />
+              )}
+              {RenderField(
+                field,
+                localData[field.name] || field.initialValue || "",
+                (value) => handleChange(field.name, value)
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+);
+
+BaseNode.displayName = "BaseNode";

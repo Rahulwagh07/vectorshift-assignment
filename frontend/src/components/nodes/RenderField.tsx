@@ -1,46 +1,51 @@
-import { Text } from '../ui/Text';
-import { TextArea } from '../ui/TextArea';
-import { Select } from '../ui/Select';
-import { Radio } from '../ui/Radio';
-import { Button } from '../ui/Button';
-import { NodeFieldRadio, NodeFieldSelect, NodeFieldType } from '../../types/node';
-import {TextEditor} from '../ui/TextEditor';
+import { Text } from "../ui/Text";
+import { TextArea } from "../ui/TextArea";
+import { Select } from "../ui/Select";
+import { Radio } from "../ui/Radio";
+import { Button } from "../ui/Button";
+import {
+  NodeFieldRadio,
+  NodeFieldSelect,
+  NodeFieldType,
+} from "../../types/node";
+import { TextEditor } from "../ui/TextEditor";
+
 export const RenderField = (
-  field: NodeFieldType, 
-  value: any, 
+  field: NodeFieldType,
+  value: any,
   onChange: (value: any) => void
 ) => {
   switch (field.type) {
-    case 'text':
-    case 'number':
+    case "text":
+    case "number":
       return (
         <Text
           type={field.type}
-          value={value || field.initialValue || ''}
+          value={value || field.initialValue || ""}
           onChange={onChange}
           placeholder={field?.placeholder}
         />
       );
 
-    case 'textNode':
+    case "textEditor":
       return (
         <TextEditor
-          value={value || ''}
+          value={value || ""}
           onChange={onChange}
           placeholder={field.placeholder}
         />
       );
 
-    case 'textArea':
+    case "textArea":
       return (
         <TextArea
-          value={value || ''}
+          value={value || ""}
           onChange={onChange}
           placeholder={field.placeholder}
         />
       );
 
-    case 'select':
+    case "select":
       const selectField = field as NodeFieldSelect;
       return (
         <Select
@@ -51,17 +56,13 @@ export const RenderField = (
         />
       );
 
-    case 'radio':
+    case "radio":
       const radioField = field as NodeFieldRadio;
       return (
-        <Radio
-          value={value}
-          onChange={onChange}
-          options={radioField.options}
-        />
+        <Radio value={value} onChange={onChange} options={radioField.options} />
       );
 
-    case 'button':
+    case "button":
       return (
         <Button
           icon={field.icon}
@@ -75,10 +76,10 @@ export const RenderField = (
       return (
         <input
           type="text"
-          value={value || ''}
+          value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
         />
       );
   }
-}; 
+};
